@@ -15,6 +15,8 @@ def webscrape():
     
     total_pages_num = int(soup.find("span", class_="totPage").text)
     
+    driver.quit()
+    
     while current_page <= total_pages_num:
         
         driver = webdriver.Chrome(executable_path="C:/Users/Eemil.Korkka/chromedriver_win32/chromedriver.exe")
