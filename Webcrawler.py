@@ -1,52 +1,49 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
-import json;
+import json
 
-def webscrape():
-    
-    base_url = "https://www.nettiauto.com/vaihtoautot/bensiiniautot?id_gear_type=3&pfrom=2500&pto=9000&id_country[]=73&mileageFrom=0&mileageTo=135000&road_permit=Y&id_acc_air=7&id_acc_cruise_control=20&chargingPowerFrom=&chargingPowerTo=page=4&page={}"
-    current_page = 1
-    driver = webdriver.Chrome(executable_path="C:/Users/Eemil.Korkka/chromedriver_win32/chromedriver.exe")
-    url = base_url.format(current_page)
+base_url = "https://www.nettiauto.com/vaihtoautot/dieselautot?id_vehicle_type=1&id_gear_type=2&id_country[]=73&show_search=1&chargingPowerFrom=&chargingPowerTo=&page={}"
+
+def get_soup(url):
+    driver = webdriver.Chrome()
     driver.get(url)
-    soup_source = driver.page_source
-    soup = BeautifulSoup(soup_source, "html5lib")
-    
-    total_pages_num = int(soup.find("span", class_="totPage").text)
-    
+    soup = BeautifulSoup(driver.page_source, "html5lib")
     driver.quit()
-    
-    while current_page <= total_pages_num:
-        
-        driver = webdriver.Chrome(executable_path="C:/Users/Eemil.Korkka/chromedriver_win32/chromedriver.exe")
-        url = base_url.format(current_page)
-        driver.get(url)
-        soup_source = driver.page_source
-        soup = BeautifulSoup(soup_source, "html5lib")
-        
-        cars = soup.body.find_all('a', class_="childVifUrl tricky_link")
+    return soup
 
-        current_page += 1
-        
-        for car in cars:
-            
-            # Dictionary for the JSON file.
-            dictionary = {
-                "Merkki": car.string,
-                "Malli": car["data-model"],
-                "Hinta": car["data-price"],
-                "Ajetut kilometrit": car["data-mileage"],
-                "Linkki": car["href"]
-            }
-            
-            # Send the data of the cars to a JSON file.
-            with open("Data.json", "a") as outfile:
-                json.dump(dictionary, outfile)
-                outfile.write("," + "\n")
-    time.sleep(5)
-    driver.quit()
+current_page = 1
+url = base_url.format(current_page)
+soup = get_soup(url) 
+total_pages_num = int(soup.find("span", class_="totPage").text)
+
+while current_page <= total_pages_num:
     
-    print("Data was successfully sent to JSON file.")
-       
-webscrape()
+    soup = get_soup(url)
+    
+    car_listings = soup.find_all("div", class_="listingVifUrl tricky_link_listing listing_nl odd")
+    
+    current_page += 1
+    
+    for car in car_listings:
+        
+        car_brand = car.find("a", class_="childVifUrl tricky_link").get("data-make")
+        car_model = car.find("a", class_="childVifUrl tricky_link").get("data-model")
+        car_price = car.find("div", class_="main_price")
+        car_link = car.find("a", class_="childVifUrl tricky_link").get("href")
+        car_image = car.find('div', class_="listing_thumb").find('img')["data-src"]
+        
+        # Dictionary for JSON file
+        dictionary = {
+            "Merkki: ": car_brand,
+            "Malli: ": car_model,
+            "Hinta: ": car_price.text,
+            "Linkki: ": car_link,
+            "Kuva: ": car_image          
+        }
+        
+        with open("Autot.json", "a") as outfile:
+            json.dump(dictionary, outfile, indent=4)
+            outfile.write("," + "\n")
+        
+    time.sleep(5)   
