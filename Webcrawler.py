@@ -46,4 +46,8 @@ while current_page <= total_pages_num:
             json.dump(dictionary, outfile, indent=4)
             outfile.write("," + "\n")
         
+        # Update url
+        current_page += 1
+        url = base_url.format(current_page)
+        
     time.sleep(5)   
